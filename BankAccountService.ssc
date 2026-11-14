@@ -1,0 +1,76 @@
+
+using Microsoft.Contracts;
+
+// Money is in minor units; account identifiers are 1 and 2.
+public class BankAccountService
+{
+    public const int MaxBalance = 1000000;
+    [Rep, SpecPublic] private int[] balances;
+    invariant balances != null;
+    invariant balances.Length == 2;
+    invariant forall { int i in (0: 2); 0 <= balances[i] && balances[i] <= MaxBalance };
+
+    public BankAccountService(int first, int second)
+        requires 0 <= first && first <= MaxBalance;
+        requires 0 <= second && second <= MaxBalance;
+        ensures balances[0] == first && balances[1] == second;
+    {
+        balances = new int[] { first, second };
+        base();
+    }
+
+    [Pure] public int GetBalance(int accountId)
+        requires 1 <= accountId && accountId <= 2;
+        ensures result == balances[accountId - 1];
+        ensures 0 <= result && result <= MaxBalance;
+    { return balances[accountId - 1]; }
+
+    public void Deposit(int accountId, int amount)
+        requires 1 <= accountId && accountId <= 2;
+        requires 0 < amount && amount <= MaxBalance - balances[accountId - 1];
+        modifies balances[accountId - 1];
+        ensures balances[accountId - 1] == old(balances[accountId - 1]) + amount;
+        ensures balances[2 - accountId] == old(balances[2 - accountId]);
+    { expose (this) { balances[accountId - 1] += amount; } }
+
+    public void Withdraw(int accountId, int amount)
+        requires 1 <= accountId && accountId <= 2;
+        requires 0 < amount && amount <= balances[accountId - 1];
+        modifies balances[accountId - 1];
+        ensures balances[accountId - 1] == old(balances[accountId - 1]) - amount;
+        ensures balances[2 - accountId] == old(balances[2 - accountId]);
+    { expose (this) { balances[accountId - 1] -= amount; } }
+
+    public void Transfer(int fromAccountId, int toAccountId, int amount)
+        requires 1 <= fromAccountId && fromAccountId <= 2;
+        requires 1 <= toAccountId && toAccountId <= 2;
+        requires fromAccountId != toAccountId;
+        requires 0 < amount && amount <= balances[fromAccountId - 1];
+        requires amount <= MaxBalance - balances[toAccountId - 1];
+        modifies balances[fromAccountId - 1], balances[toAccountId - 1];
+        ensures balances[fromAccountId - 1] == old(balances[fromAccountId - 1]) - amount;
+        ensures balances[toAccountId - 1] == old(balances[toAccountId - 1]) + amount;
+        ensures balances[0] + balances[1] == old(balances[0] + balances[1]);
+    {
+        expose (this)
+        {
+            balances[fromAccountId - 1] -= amount;
+            balances[toAccountId - 1] += amount;
+            assert balances[0] >= 0 && balances[1] >= 0;
+        }
+    }
+
+    [Pure] public int GetTotalBalance()
+        ensures result == balances[0] + balances[1];
+        ensures 0 <= result && result <= 2 * MaxBalance;
+    {
+        int total = 0;
+        for (int i = 0; i < 2; i++)
+            invariant 0 <= i && i <= 2;
+            invariant total == (i == 0 ? 0 : (i == 1 ? balances[0] : balances[0] + balances[1]));
+            invariant 0 <= total && total <= i * MaxBalance;
+            invariant forall { int k in (0: i); 0 <= balances[k] && balances[k] <= MaxBalance };
+        { total += balances[i]; }
+        return total;
+    }
+}

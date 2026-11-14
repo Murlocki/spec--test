@@ -1,0 +1,10 @@
+// Preserved original defect: addition instead of subtraction.
+public class WithdrawBroken
+{
+    public static int Withdraw(int balance, int amount)
+        requires 0 <= balance && balance <= 1000000;
+        requires 0 < amount && amount <= balance;
+        ensures result == balance - amount;
+        ensures result >= 0;
+    { return balance + amount; }
+}

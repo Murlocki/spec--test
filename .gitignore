@@ -1,0 +1,24 @@
+# Recreated by the build and verification scripts
+/build/
+/bin/
+/obj/
+/packages/
+/artifacts/
+
+# Local archive of original reference files
+/.local/
+
+# Visual Studio and user-specific settings
+/.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Old build outputs in the repository root
+/BankAccountService.dll
+/BankAccountService.pdb
+*.backup
+~$*
+__pycache__/
+*.pyc
